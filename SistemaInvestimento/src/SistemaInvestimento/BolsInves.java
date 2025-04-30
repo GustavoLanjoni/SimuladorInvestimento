@@ -7,82 +7,111 @@ import java.awt.event.ActionListener;
 
 public class BolsInves extends JFrame {
 
-    // Componentes
-    private JTextField campoAtivo, campoValorInicial, campoAporteMensal, campoTaxaJuros, campoMeses;
-    private JButton botaoSimular;
+    private JTextField campoValorInicial, campoTaxa, campoMeses;
+    private JTextArea resultadoArea;
 
     public BolsInves() {
-        setTitle("Simulador de Investimentos");
-        setSize(400, 350);
+        super("Simulador de Investimentos");
+        setSize(400, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setLayout(new GridLayout(7, 2, 10, 10));
 
-        // Campos de entrada
-        add(new JLabel("Nome do Ativo:"));
-        campoAtivo = new JTextField();
-        add(campoAtivo);
+        // Painel principal
+        JPanel painel = new JPanel(new GridLayout(5, 2, 10, 10));
+        painel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        add(new JLabel("Valor Inicial (R$):"));
+        // Componentes
+        painel.add(new JLabel("Valor Inicial (R$):"));
         campoValorInicial = new JTextField();
-        add(campoValorInicial);
+        painel.add(campoValorInicial);
 
-        add(new JLabel("Aporte Mensal (R$):"));
-        campoAporteMensal = new JTextField();
-        add(campoAporteMensal);
+        painel.add(new JLabel("Taxa de Juros (% ao mês):"));
+        campoTaxa = new JTextField();
+        painel.add(campoTaxa);
 
-        add(new JLabel("Taxa de Juros Mensal (%):"));
-        campoTaxaJuros = new JTextField();
-        add(campoTaxaJuros);
-
-        add(new JLabel("Duração (meses):"));
+        painel.add(new JLabel("Meses:"));
         campoMeses = new JTextField();
-        add(campoMeses);
+        painel.add(campoMeses);
 
-        // Botão de simular
-        botaoSimular = new JButton("Simular");
-        add(botaoSimular);
-        add(new JLabel()); // espaço em branco
+        JButton botaoSimular = new JButton("Simular");
+        JButton botaoLimpar = new JButton("Limpar");
 
-        // Ação do botão
+        // Estilo dos botões
+        botaoSimular.setBackground(Color.GREEN);
+        botaoSimular.setForeground(Color.WHITE);
+        botaoSimular.setFocusPainted(false);
+
+        botaoLimpar.setBackground(Color.RED);
+        botaoLimpar.setForeground(Color.WHITE);
+        botaoLimpar.setFocusPainted(false);
+
+        painel.add(botaoSimular);
+        painel.add(botaoLimpar);
+
+        resultadoArea = new JTextArea();
+        resultadoArea.setEditable(false);
+        resultadoArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        JScrollPane scroll = new JScrollPane(resultadoArea);
+
+        add(painel, BorderLayout.NORTH);
+        add(scroll, BorderLayout.CENTER);
+
+        // Ação do botão Simular
         botaoSimular.addActionListener(new ActionListener() {
-            @Override
             public void actionPerformed(ActionEvent e) {
                 simularInvestimento();
             }
         });
 
-        setVisible(true);
+        // Ação do botão Limpar
+        botaoLimpar.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                limparCampos();
+            }
+        });
     }
 
-    // Método para fazer o cálculo da simulação
     private void simularInvestimento() {
         try {
-            String ativo = campoAtivo.getText();
             double valorInicial = Double.parseDouble(campoValorInicial.getText());
-            double aporteMensal = Double.parseDouble(campoAporteMensal.getText());
-            double taxaJuros = Double.parseDouble(campoTaxaJuros.getText()) / 100;
+            double taxaMensal = Double.parseDouble(campoTaxa.getText()) / 100;
             int meses = Integer.parseInt(campoMeses.getText());
 
-            double valorFinal = valorInicial * Math.pow(1 + taxaJuros, meses) +
-                    aporteMensal * ((Math.pow(1 + taxaJuros, meses) - 1) / taxaJuros);
+            if (valorInicial <= 0 || taxaMensal <= 0 || meses <= 0) {
+                JOptionPane.showMessageDialog(this, "Insira valores positivos e diferentes de zero.", "Erro", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
-            double totalInvestido = valorInicial + (aporteMensal * meses);
-            double rendimento = valorFinal - totalInvestido;
+            double montante = valorInicial;
+            StringBuilder resultado = new StringBuilder();
 
-            String mensagem = "Ativo: " + ativo +
-                    "\nValor Final: R$ " + String.format("%.2f", valorFinal) +
-                    "\nTotal Investido: R$ " + String.format("%.2f", totalInvestido) +
-                    "\nRendimento: R$ " + String.format("%.2f", rendimento);
+            for (int i = 1; i <= meses; i++) {
+                montante *= (1 + taxaMensal);
+                resultado.append(String.format("Mês %2d: R$ %.2f\n", i, montante));
+            }
 
-            JOptionPane.showMessageDialog(this, mensagem, "Resultado da Simulação", JOptionPane.INFORMATION_MESSAGE);
+            resultado.append("\n=============================\n");
+            resultado.append("Valor investido: R$ ").append(String.format("%.2f", valorInicial)).append("\n");
+            resultado.append("Montante final:   R$ ").append(String.format("%.2f", montante)).append("\n");
+            resultado.append("Lucro total:      R$ ").append(String.format("%.2f", montante - valorInicial)).append("\n");
 
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Verifique os dados digitados!", "Erro", JOptionPane.ERROR_MESSAGE);
+            resultadoArea.setText(resultado.toString());
+
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Preencha todos os campos corretamente.", "Erro", JOptionPane.ERROR_MESSAGE);
         }
     }
 
+    private void limparCampos() {
+        campoValorInicial.setText("");
+        campoTaxa.setText("");
+        campoMeses.setText("");
+        resultadoArea.setText("");
+    }
+
     public static void main(String[] args) {
-        new BolsInves();
+        SwingUtilities.invokeLater(() -> {
+            new BolsInves().setVisible(true);
+        });
     }
 }
